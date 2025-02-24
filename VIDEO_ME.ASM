@@ -4,6 +4,7 @@ size_x dw 35d
 size_y dw 10d
 text db 'Hello, World!', 0
 len_text dw $ - text
+frame_color db 0Eh
 
 .code
 org 100h
@@ -24,7 +25,7 @@ Draw_Frame proc
 
     mov cx, size_y
     call Draw_Central_Part
-
+    xor ax, ax
     mov dx, size_y
     dec dx
     mul dx
@@ -41,17 +42,22 @@ endp
 Draw_Horizontal_Line proc
     mov es, bx
     mov di, 0
-    mov byte ptr es:[di], '/'
+    mov al, frame_color
+    mov ah, '/'
+    mov word ptr es:[di], ax
     add di, 2
 
     mov cx, dx
     sub cx, 2
 Next:
-    mov byte ptr es:[di], 219d
+    mov ah, 219d  ; Заполняем середину
+    mov word ptr es:[di], ax
     add di, 2
     loop Next
 
-    mov byte ptr es:[di], '\'
+    mov al, frame_color
+    mov ah, '/'
+    mov word ptr es:[di], ax
     ret
 endp
 
@@ -67,7 +73,10 @@ Cycle:
     add bx, 10d
     mov es, bx
     mov di, 0
-    mov byte ptr es:[di], 219d
+    mov al, frame_color
+    mov ah, 219d
+    mov word ptr es:[di], ax
+    ;mov word ptr es:[di], 0E219h ;219d
 
     mov cx, size_x
     sub cx, 2
@@ -78,7 +87,9 @@ FillLoop:
     add di, 2
     loop FillLoop
 
-    mov byte ptr es:[di], 219d
+    mov ah, 219d
+    mov word ptr es:[di], ax
+    ;mov word ptr es:[di], 0E219h ;219d
     dec si
     jnz Cycle
     ret
