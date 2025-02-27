@@ -2,19 +2,65 @@
 .data
 size_x dw 35d
 size_y dw 10d
-text db 'Hello, World!', 0
-len_text dw $ - text
-frame_color db 0Eh
+;text db 'Hello, World!', 0
+;len_text dw $ - text
+frame_color db 01100111b
+symbol_for_central_part db 11d
+buffer_for_text db 20 dup(0)
 
 .code
 org 100h
 Start:
+    call Read_the_text
     mov bx, 0b800h
     call Draw_Frame
     call Print_Text
     mov ax, 4c00h
     int 21h
 
+;----------------------------------------------------------
+;Read_the_text
+;----------------------------------------------------------
+Read_the_text proc
+    xor cx, cx
+    mov si, offset buffer_for_text
+InputLoop:
+    mov ah, 00h
+    int 16h
+    cmp al, 0Dh
+    je Finish
+
+    cmp al, 08h  ; Backspace?
+    je Backspace
+
+    mov ah, 0Eh
+    int 10h
+
+    mov [si], al
+    inc si
+    inc cx
+    cmp cx, 20
+    jl InputLoop
+Backspace:
+    cmp cx, 0
+    je Finish
+
+    dec si
+    dec cx
+
+    mov ah, 0Eh
+    mov al, 08h; Delete symbol
+    int 10h
+    mov al, ' '
+    int 10h
+    mov al, 08h
+    int 10h
+    jmp InputLoop
+
+Finish:
+    mov byte ptr [si], 0
+    ret
+endp
 ;----------------------------------------------------------
 ; Draw_Frame
 ;----------------------------------------------------------
@@ -42,21 +88,21 @@ endp
 Draw_Horizontal_Line proc
     mov es, bx
     mov di, 0
-    mov al, frame_color
-    mov ah, '/'
+    mov ah, frame_color
+    mov al, '/'
     mov word ptr es:[di], ax
     add di, 2
 
     mov cx, dx
     sub cx, 2
 Next:
-    mov ah, 219d  ; Заполняем середину
+    mov al, symbol_for_central_part  ; Заполняем середину
     mov word ptr es:[di], ax
     add di, 2
     loop Next
 
-    mov al, frame_color
-    mov ah, '/'
+    mov ah, frame_color
+    mov al, '\'
     mov word ptr es:[di], ax
     ret
 endp
@@ -73,8 +119,8 @@ Cycle:
     add bx, 10d
     mov es, bx
     mov di, 0
-    mov al, frame_color
-    mov ah, 219d
+    mov ah, frame_color
+    mov al, symbol_for_central_part
     mov word ptr es:[di], ax
     ;mov word ptr es:[di], 0E219h ;219d
 
@@ -87,7 +133,7 @@ FillLoop:
     add di, 2
     loop FillLoop
 
-    mov ah, 219d
+    mov al, symbol_for_central_part
     mov word ptr es:[di], ax
     ;mov word ptr es:[di], 0E219h ;219d
     dec si
@@ -108,9 +154,9 @@ Print_Text proc
     add bx, ax
     mov es, bx
 
-    mov di, len_text  ; Shift the string closer to the left edge
+    mov di, 8  ; Shift the string closer to the left edge
 
-    mov si, offset text
+    mov si, offset buffer_for_text
 PrintLoop:
     mov al, [si]
     cmp al, 0
