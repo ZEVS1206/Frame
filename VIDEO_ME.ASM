@@ -5,7 +5,8 @@ size_y dw 10d
 ;text db 'Hello, World!', 0
 ;len_text dw $ - text
 frame_color db 01100111b
-symbol_for_central_part db 11d
+text_color  db 01011010b
+symbol_for_central_part db 21d
 buffer_for_text db 20 dup(0)
 
 .code
@@ -157,11 +158,12 @@ Print_Text proc
     mov di, 8  ; Shift the string closer to the left edge
 
     mov si, offset buffer_for_text
+    mov ah, text_color
 PrintLoop:
     mov al, [si]
     cmp al, 0
     je Done
-    mov byte ptr es:[di], al
+    mov word ptr es:[di], ax
     add di, 2
     inc si
     jmp PrintLoop
